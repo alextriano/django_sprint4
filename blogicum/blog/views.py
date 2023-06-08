@@ -1,5 +1,4 @@
 from django.shortcuts import get_object_or_404, render, redirect
-# from django.db.models import Q
 from django.core.paginator import Paginator
 from django.utils import timezone
 from django.db.models import Count
@@ -13,7 +12,7 @@ from .models import Post, Category, Comment, User
 from .forms import PostForm, CommentForm
 
 
-# Главная страница ok
+# Главная страница
 def index(request):
     post_list = Post.objects.filter(
         pub_date__date__lte=timezone.now(),
@@ -28,7 +27,7 @@ def index(request):
     return render(request, 'blog/index.html', {'page_obj': page_obj})
 
 
-# Описание поста ok
+# Описание поста
 class PostDetailView(LoginRequiredMixin, DetailView):
     model = Post
     form_class = PostForm
@@ -39,13 +38,10 @@ class PostDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['post'] = get_object_or_404(Post, id=self.kwargs['post_id'])
         context['form'] = CommentForm()
-        # context['comments'] = (
-        #     self.object.comments.select_related('author')
-        # )
         return context
 
 
-# Страница категории ok
+# Страница категории
 def category_posts(request, category_slug):
     post_list = Post.objects.select_related(
         'category', 'location', 'author').filter(
@@ -137,12 +133,6 @@ class PostCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.author = self.request.user
         return super().form_valid(form)
-
-    # def form_valid(self, form):
-    #     form.instance.author = self.request.user
-    #     if not form.instance.pub_date:
-    #         form.instance.pub_date = timezone.now()
-    #     return super().form_valid(form)
 
     def get_success_url(self):
         username = self.request.user.username
@@ -236,12 +226,6 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
     def dispatch(self, request, *args, **kwargs):
         self.post = get_object_or_404(Post, pk=kwargs['post_id'])
         return super().dispatch(request, *args, **kwargs)
-
-    # def dispatch(self, request, *args, **kwargs):
-    #     instance = get_object_or_404(Comment, pk=kwargs['pk'])
-    #     if instance.author != request.user:
-    #         return redirect('blog:post_detail', kwargs={'pk': self.post.pk})
-    #     return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse(

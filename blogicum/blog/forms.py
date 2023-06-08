@@ -17,10 +17,3 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ('text',)
-
-
-# class UserEditForm(forms.ModelForm):
-
-#     class Meta:
-#         model = Comment
-#         fields = ('username', 'first_name', 'last_name', 'email')
