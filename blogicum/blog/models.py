@@ -2,6 +2,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.urls import reverse
 
+from blogicum.settings import POSTS_IN_PAGE
+
 
 User = get_user_model()
 
@@ -39,7 +41,7 @@ class Category(models.Model):
         verbose_name_plural = 'Категории'
 
     def __str__(self):
-        return self.title[:10]
+        return self.title[:POSTS_IN_PAGE]
 
 
 class Location(models.Model):

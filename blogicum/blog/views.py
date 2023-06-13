@@ -1,34 +1,34 @@
 from django.core.paginator import Paginator
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count
+from django.shortcuts import get_object_or_404, render, redirect
+from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, ListView, UpdateView, DetailView
 )
-from django.urls import reverse_lazy
-from django.shortcuts import get_object_or_404, render, redirect
-from django.utils import timezone
-
-from .models import Post, Category, Comment, User
-from .forms import PostForm, CommentForm
+from .models import Category, Comment, Post, User
+from .forms import CommentForm, PostForm
+from blogicum.settings import POSTS_IN_PAGE
 
 
-# Главная страница
 def index(request):
+    """Homepage."""
     post_list = Post.objects.filter(
         pub_date__date__lte=timezone.now(),
         is_published=True,
         category__is_published=True
     ).annotate(comment_count=Count('comments')
                ).order_by('-pub_date')
-    paginator = Paginator(post_list, 10)
+    paginator = Paginator(post_list, POSTS_IN_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     return render(request, 'blog/index.html', {'page_obj': page_obj})
 
 
-# Описание поста
 class PostDetailView(LoginRequiredMixin, DetailView):
+    """Post view."""
     model = Post
     form_class = PostForm
     template_name = 'blog/detail.html'
@@ -43,8 +43,8 @@ class PostDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-# Страница категории
 def category_posts(request, category_slug):
+    """Category view."""
     post_list = Post.objects.select_related(
         'category', 'location', 'author').filter(
         category__slug=category_slug,
@@ -58,7 +58,7 @@ def category_posts(request, category_slug):
         ),
         slug=category_slug
     )
-    paginator = Paginator(post_list, 10)
+    paginator = Paginator(post_list, POSTS_IN_PAGE)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     context = {'page_obj': page_obj,
@@ -66,12 +66,12 @@ def category_posts(request, category_slug):
     return render(request, 'blog/category.html', context)
 
 
-# Страница пользователя
 class ProfileListView(ListView):
+    """User page."""
     model = Post
     pk_url_kwarg = 'username'
     template_name = 'blog/profile.html'
-    paginate_by = 10
+    paginate_by = POSTS_IN_PAGE
 
     def dispatch(self, request, *args, **kwargs):
         self.user = get_object_or_404(User, username=self.kwargs['username'])
@@ -102,8 +102,8 @@ class ProfileListView(ListView):
         )
 
 
-# Изменение профиля
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
+    """Profile change."""
     model = User
     pk_url_kwarg = 'username'
     fields = '__all__'
@@ -120,18 +120,15 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-# Создание поста
 class PostCreateView(LoginRequiredMixin, CreateView):
+    """Create post."""
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
 
     def form_valid(self, form):
         form.instance.author = self.request.user
-        if form.instance.pub_date > timezone.now():
-            form.instance.is_published = False
-        else:
-            form.instance.is_published = True
+        form.instance.is_published = True
         return super().form_valid(form)
 
     def get_success_url(self):
@@ -142,8 +139,8 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         )
 
 
-# Изменение поста
 class PostUpdateView(LoginRequiredMixin, UpdateView):
+    """Editing post."""
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -162,8 +159,8 @@ class PostUpdateView(LoginRequiredMixin, UpdateView):
         )
 
 
-# Удаление поста
 class PostDeleteView(LoginRequiredMixin, DeleteView):
+    """Deleting post."""
     model = Post
     form_class = PostForm
     template_name = 'blog/create.html'
@@ -189,8 +186,8 @@ class PostDeleteView(LoginRequiredMixin, DeleteView):
         )
 
 
-# Создание комментария
 class CommentCreateView(LoginRequiredMixin, CreateView):
+    """Create comment."""
     post_ = None
     model = Comment
     form_class = CommentForm
@@ -210,8 +207,8 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
             'blog:post_detail', kwargs={'pk': self.object.post.id})
 
 
-# Изменение комментария
 class CommentUpdateView(LoginRequiredMixin, UpdateView):
+    """Editing comment."""
     model = Comment
     form_class = CommentForm
     pk_url_kwarg = 'comment_id'
@@ -225,8 +222,8 @@ class CommentUpdateView(LoginRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
 
-# Удаление комментария
 class CommentDeleteView(LoginRequiredMixin, DeleteView):
+    """Deleting comment."""
     model = Comment
     form_class = CommentForm
     pk_url_kwarg = 'comment_id'
