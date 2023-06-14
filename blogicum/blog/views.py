@@ -7,6 +7,7 @@ from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, ListView, UpdateView, DetailView
 )
+
 from .models import Category, Comment, Post, User
 from .forms import CommentForm, PostForm
 from blogicum.settings import POSTS_IN_PAGE
